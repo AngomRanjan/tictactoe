@@ -1,4 +1,5 @@
 let currentPlayer = "X";
+let gameover = false;
 const playerSymbol = document.getElementById("player-symbol");
 
 const checkWinner = () => {
@@ -23,10 +24,11 @@ const checkWinner = () => {
 
 const handleCellClick = (e) => {
   const cell = e.target;
-  if (cell.dataset.type !== "cell" || (cell.dataset.type === "cell" && cell.textContent !== '')) return;
+  if (gameover || cell.dataset.type !== "cell" || (cell.dataset.type === "cell" && cell.textContent !== '')) return;
   cell.textContent = currentPlayer;
 
   if (checkWinner()) {
+    gameover = true;
     document.getElementById('result').textContent = `Result: Player ${currentPlayer} wins!`;
   }
 
