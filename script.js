@@ -1,12 +1,17 @@
 let currentPlayer = "X";
-let gameover = false;
+let gameOver = false;
 const playerSymbol = document.getElementById("player-symbol");
+
+isBoardFilled = () => {
+  const cells = [...document.querySelectorAll('[data-type="cell"]')];
+  return cells.every(cell => cell.textContent !== '');
+};
 
 const checkWinner = () => {
   const winPatterns = [
-    [1, 2, 3], [4, 5, 6], [7, 8, 9], // Rows
-    [1, 4, 7], [2, 5, 8], [3, 6, 9], // Columns
-    [1, 5, 9], [3, 5, 7]             // Diagonals
+    [1, 2, 3], [4, 5, 6], [7, 8, 9],
+    [1, 4, 7], [2, 5, 8], [3, 6, 9],
+    [1, 5, 9], [3, 5, 7]
   ];
 
   for (const pattern of winPatterns) {
@@ -24,16 +29,19 @@ const checkWinner = () => {
 
 const handleCellClick = (e) => {
   const cell = e.target;
-  if (gameover || cell.dataset.type !== "cell" || (cell.dataset.type === "cell" && cell.textContent !== '')) return;
+  if (gameOver || cell.dataset.type !== "cell" || (cell.dataset.type === "cell" && cell.textContent !== '')) return;
   cell.textContent = currentPlayer;
 
   if (checkWinner()) {
-    gameover = true;
+    gameOver = true;
     document.getElementById('result').textContent = `Result: Player ${currentPlayer} wins!`;
-  }
-
-  currentPlayer = currentPlayer === "X" ? "O" : "X";
+  } else if (isBoardFilled()) {
+    gameOver = true;
+    document.getElementById('result').textContent = 'Result: It\'s a tie!';
+  } else {
+    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
     playerSymbol.textContent = currentPlayer;
+  }
 };
 
 document.getElementById("board").addEventListener("click", handleCellClick);
