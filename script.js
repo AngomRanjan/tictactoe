@@ -23,7 +23,7 @@ const checkWinner = () => {
 
 const handleCellClick = (e) => {
   const cell = e.target;
-  if (cell.dataset.type !== "cell") return;
+  if (cell.dataset.type !== "cell" || (cell.dataset.type === "cell" && cell.textContent !== '')) return;
   cell.textContent = currentPlayer;
 
   if (checkWinner()) {
