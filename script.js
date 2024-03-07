@@ -12,11 +12,93 @@ const Gameboard = (() => {
   const resetBoard = () => board.fill('');
   
   return {
-      get currentBoard() { return [...board] },
+      get currentBoard() { return board },
       isCellEmpty,
       isBoardFilled,
       markCell,
       resetBoard,
+  };
+})();
+
+const Player = (name, symbol) => {
+  return {
+      name,
+      symbol,
+  };
+};
+
+const Game = (() => {
+  const player1 = Player('Player 1', 'X');
+  const player2 = Player('Player 2', 'O');
+  let currentPlayer = player1;
+  let isGameOver = false;
+  let winner = null;
+
+  const { isCellEmpty, isBoardFilled, markCell, currentBoard, resetBoard } = Gameboard;
+
+  const winPatterns = [
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8],
+    [0, 4, 8],
+    [2, 4, 6],
+  ];
+
+  const checkWinner = () => {
+    for (const pattern of winPatterns) {
+      const [a, b, c] = pattern;
+      if (
+        currentBoard[a] !== "" &&
+        currentBoard[a] === currentBoard[b] &&
+        currentBoard[a] === currentBoard[c]
+      ) {
+        winner = currentPlayer;
+        return true;
+      }
+    }
+
+    return false;
+  };
+
+  const isValidMove = (index) => isCellEmpty(index) && !isGameOver;
+
+  const makeMove = (index) => {
+    if (isValidMove(index)) {
+      markCell(index, currentPlayer.symbol);
+      return true;
+    }
+    return false;
+  }
+
+  const switchPlayer = () => {
+    currentPlayer = currentPlayer === player1 ? player2 : player1;
+  };
+
+  const status = () => {
+    isGameOver = checkWinner() || isBoardFilled();
+    if (isGameOver) {
+      return winner ? `Result: ${winner.name} wins!` : "It's a tie!";
+    } else {
+      switchPlayer();
+      return "Game in progress...";
+    }
+  };
+
+  const resetGame = () => {
+    resetBoard();
+    currentPlayer = player1;
+    winner = null;
+    isGameOver = false;
+  };
+
+  return {
+    get currentPlayer() { return currentPlayer },
+    makeMove,
+    status,
+    resetGame
   };
 })();
 
@@ -27,70 +109,23 @@ const initializeGame = () => {
   const boardElement = document.getElementById("board");
   const resetButton = document.getElementById("reset-button");
 
-  let currentPlayer = "X";
-  let gameOver = false;
-
-  const isBoardFilled = () => cells.every((cell) => cell.textContent !== "");
-
-  const checkWinner = () => {
-    const winPatterns = [
-      [0, 1, 2],
-      [3, 4, 5],
-      [6, 7, 8],
-      [0, 3, 6],
-      [1, 4, 7],
-      [2, 5, 8],
-      [0, 4, 8],
-      [2, 4, 6],
-    ];
-
-    for (const pattern of winPatterns) {
-      const [a, b, c] = pattern;
-      const sqrA = document.getElementById(a).textContent;
-      const sqrB = document.getElementById(b).textContent;
-      const sqrC = document.getElementById(c).textContent;
-      if (sqrA !== "" && sqrA === sqrB && sqrA === sqrC) {
-        return true;
-      }
-    }
-
-    return false;
-  };
-
-  const updateResult = () => {
-    if (checkWinner()) {
-      result.textContent = `Result: Player ${currentPlayer} wins!`;
-    } else if (isBoardFilled()) {
-      result.textContent = "Result: It's a tie!";
-    } else {
-      result.textContent = "Game in progress...";
-    }
+  const updateResult = (msg) => {
+    result.textContent = msg;
   };
 
   const resetGame = () => {
     cells.forEach((cell) => (cell.textContent = ""));
     result.textContent = "";
-    currentPlayer = "X";
-    currentPlayerSymbol.textContent = currentPlayer;
-    gameOver = false;
-    Gameboard.resetBoard();
-  };
-
-  const switchPlayer = () => {
-    currentPlayer = currentPlayer === "X" ? "O" : "X";
-    currentPlayerSymbol.textContent = currentPlayer;
+    Game.resetGame();
   };
 
   const handleCellClick = (e) => {
     const cell = e.target;
-    const { isCellEmpty, markCell } = Gameboard;
+    const { currentPlayer, makeMove } = Game;
     const id = parseInt(cell.id);
-    if (gameOver || cell.dataset.type !== "cell" || !isCellEmpty(id)) return;
-    cell.textContent = currentPlayer;
-    markCell(id, currentPlayer);
-    gameOver = checkWinner() || isBoardFilled();
-    if (!gameOver) switchPlayer();
-    updateResult();
+    if (cell.dataset.type !== "cell" || !makeMove(id)) return;
+    cell.textContent = currentPlayer.symbol;
+    updateResult(Game.status());
   };
 
   boardElement.addEventListener("click", handleCellClick);
