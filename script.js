@@ -1,3 +1,25 @@
+const Gameboard = (() => {
+  const board = Array(9).fill('');
+
+  const isCellEmpty = (index) => board[index] === '';
+
+  const isBoardFilled = () => board.every((cell) => cell !== "");
+
+  const markCell = (index, marker) => {
+      if (isCellEmpty(index)) board[index] = marker;
+  };
+
+  const resetBoard = () => board.fill('');
+  
+  return {
+      get currentBoard() { return [...board] },
+      isCellEmpty,
+      isBoardFilled,
+      markCell,
+      resetBoard,
+  };
+})();
+
 const initializeGame = () => {
   const currentPlayerSymbol = document.getElementById("player-symbol");
   const result = document.getElementById("result");
@@ -12,14 +34,14 @@ const initializeGame = () => {
 
   const checkWinner = () => {
     const winPatterns = [
-      [1, 2, 3],
-      [4, 5, 6],
-      [7, 8, 9],
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
       [1, 4, 7],
       [2, 5, 8],
-      [3, 6, 9],
-      [1, 5, 9],
-      [3, 5, 7],
+      [0, 4, 8],
+      [2, 4, 6],
     ];
 
     for (const pattern of winPatterns) {
@@ -51,6 +73,7 @@ const initializeGame = () => {
     currentPlayer = "X";
     currentPlayerSymbol.textContent = currentPlayer;
     gameOver = false;
+    Gameboard.resetBoard();
   };
 
   const switchPlayer = () => {
@@ -60,9 +83,11 @@ const initializeGame = () => {
 
   const handleCellClick = (e) => {
     const cell = e.target;
-    if (gameOver || cell.dataset.type !== "cell" || cell.textContent !== "")
-      return;
+    const { isCellEmpty, markCell } = Gameboard;
+    const id = parseInt(cell.id);
+    if (gameOver || cell.dataset.type !== "cell" || !isCellEmpty(id)) return;
     cell.textContent = currentPlayer;
+    markCell(id, currentPlayer);
     gameOver = checkWinner() || isBoardFilled();
     if (!gameOver) switchPlayer();
     updateResult();
