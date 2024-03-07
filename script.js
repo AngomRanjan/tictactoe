@@ -102,34 +102,66 @@ const Game = (() => {
   };
 })();
 
-const initializeGame = () => {
-  const currentPlayerSymbol = document.getElementById("player-symbol");
+const displayController = (() => {
+  const playerNameElement = document.getElementById("player-name");
+  const playerSymbolElement = document.getElementById("player-symbol");
   const result = document.getElementById("result");
   const cells = Array.from(document.querySelectorAll('[data-type="cell"]'));
-  const boardElement = document.getElementById("board");
-  const resetButton = document.getElementById("reset-button");
 
-  const updateResult = (msg) => {
+  const displayCurrentPlayer = ({ name, symbol }) => {
+    playerNameElement.textContent = name;
+    playerSymbolElement.textContent = symbol;
+  };
+
+  const displayResult = (msg) => {
     result.textContent = msg;
   };
 
-  const resetGame = () => {
+  const displayCellContent = (index, symbol) => {
+    cells[index].textContent = symbol;
+  };
+
+  const resetDisplay = () => {
     cells.forEach((cell) => (cell.textContent = ""));
     result.textContent = "";
-    Game.resetGame();
+  };
+
+  const updateDisplay = (cellIndex, Game) => {
+    displayCellContent(cellIndex, Game.currentPlayer.symbol);
+    displayResult(Game.status());
+    displayCurrentPlayer(Game.currentPlayer);
+  };
+
+  return {
+    displayCurrentPlayer,
+    updateDisplay,
+    resetDisplay
+  };
+})();
+
+const initializeGame = () => {
+  const boardElement = document.getElementById("board");
+  const resetButton = document.getElementById("reset-button");
+
+  const { displayCurrentPlayer, resetDisplay, updateDisplay } = displayController;
+  const { makeMove, resetGame } = Game;
+
+  displayCurrentPlayer(Game.currentPlayer);
+
+  const handleResetBtnClick = () => {
+    resetGame();
+    resetDisplay();
   };
 
   const handleCellClick = (e) => {
     const cell = e.target;
-    const { currentPlayer, makeMove } = Game;
     const id = parseInt(cell.id);
     if (cell.dataset.type !== "cell" || !makeMove(id)) return;
-    cell.textContent = currentPlayer.symbol;
-    updateResult(Game.status());
+    updateDisplay(id, Game);
   };
 
   boardElement.addEventListener("click", handleCellClick);
-  resetButton.addEventListener("click", resetGame);
+  resetButton.addEventListener("click", handleResetBtnClick);
 };
 
 document.addEventListener("DOMContentLoaded", initializeGame);
