@@ -1,10 +1,13 @@
+const currentPlayerSymbol = document.getElementById("player-symbol");
+const result = document.getElementById("result");
+const cells = Array.from(document.querySelectorAll('[data-type="cell"]'));
+const boardElement = document.getElementById("board");
+const resetButton = document.getElementById('reset-button');
+
 let currentPlayer = "X";
 let gameOver = false;
-const result = document.getElementById("result");
-const cells = [...document.querySelectorAll('[data-type="cell"]')];
-const playerSymbol = document.getElementById("player-symbol");
 
-isBoardFilled = () => cells.every(cell => cell.textContent !== '');
+const isBoardFilled = () => cells.every(cell => cell.textContent !== '');
 
 const checkWinner = () => {
   const winPatterns = [
@@ -26,31 +29,37 @@ const checkWinner = () => {
   return false;
 };
 
+const updateResult = () => {
+  if (checkWinner()) {
+    result.textContent= `Result: Player ${currentPlayer} wins!`;
+  } else if (isBoardFilled()) {
+    result.textContent= "Result: It's a tie!";
+  } else {
+    result.textContent= "Game in progress...";
+  }
+};
+
 const resetGame = () => {
   cells.forEach(cell => cell.textContent = '');
-  result.textContent = '';
+  result.textContent= '';
   currentPlayer = 'X';
-  playerSymbol.textContent = currentPlayer;
+  currentPlayerSymbol.textContent = currentPlayer;
   gameOver = false;
+};
+
+const switchPlayer = () => {
+  currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+  currentPlayerSymbol.textContent = currentPlayer;
 };
 
 const handleCellClick = (e) => {
   const cell = e.target;
-  if (gameOver || cell.dataset.type !== "cell" || (cell.dataset.type === "cell" && cell.textContent !== '')) return;
+  if (gameOver || cell.dataset.type !== "cell" || cell.textContent !== '') return;
   cell.textContent = currentPlayer;
-
-  if (checkWinner()) {
-    gameOver = true;
-    result.textContent = `Result: Player ${currentPlayer} wins!`;
-  } else if (isBoardFilled()) {
-    gameOver = true;
-    result.textContent = 'Result: It\'s a tie!';
-  } else {
-    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-    playerSymbol.textContent = currentPlayer;
-    result.textContent = 'Game in progress...';
-  }
+  gameOver = checkWinner() || isBoardFilled();
+  if (!gameOver) switchPlayer();
+  updateResult();
 };
 
-document.getElementById("board").addEventListener("click", handleCellClick);
-document.getElementById('reset-button').addEventListener('click', resetGame);
+boardElement.addEventListener("click", handleCellClick);
+resetButton.addEventListener('click', resetGame);
