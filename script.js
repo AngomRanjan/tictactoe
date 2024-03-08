@@ -20,12 +20,7 @@ const Gameboard = (() => {
   };
 })();
 
-const Player = (name, symbol) => {
-  return {
-      name,
-      symbol,
-  };
-};
+const Player = (name, symbol) => ({ name, symbol });
 
 const Game = (() => {
   const player1 = Player('Player 1', 'X');
@@ -48,16 +43,16 @@ const Game = (() => {
   ];
 
   const checkWinner = () => {
-    for (const pattern of winPatterns) {
-      const [a, b, c] = pattern;
-      if (
-        currentBoard[a] !== "" &&
-        currentBoard[a] === currentBoard[b] &&
-        currentBoard[a] === currentBoard[c]
-      ) {
-        winner = currentPlayer;
-        return true;
-      }
+    if (
+      winPatterns.some(
+        ([a, b, c]) =>
+          currentBoard[a] !== "" &&
+          currentBoard[a] === currentBoard[b] &&
+          currentBoard[a] === currentBoard[c]
+      )
+    ) {
+      winner = currentPlayer;
+      return true;
     }
 
     return false;
@@ -80,7 +75,7 @@ const Game = (() => {
   const status = () => {
     isGameOver = checkWinner() || isBoardFilled();
     if (isGameOver) {
-      return winner ? `Result: ${winner.name} wins!` : "It's a tie!";
+      return winner ? `Result: ${winner.name} wins!` : "Result: It's a tie!";
     } else {
       switchPlayer();
       return "Game in progress...";
@@ -139,7 +134,7 @@ const displayController = (() => {
   };
 })();
 
-const initializeGame = () => {
+const main = () => {
   const boardElement = document.getElementById("board");
   const resetButton = document.getElementById("reset-button");
 
@@ -164,4 +159,4 @@ const initializeGame = () => {
   resetButton.addEventListener("click", handleResetBtnClick);
 };
 
-document.addEventListener("DOMContentLoaded", initializeGame);
+document.addEventListener("DOMContentLoaded", main);
