@@ -1,75 +1,162 @@
-const initializeGame = () => {
-  const currentPlayerSymbol = document.getElementById("player-symbol");
-  const result = document.getElementById("result");
-  const cells = Array.from(document.querySelectorAll('[data-type="cell"]'));
-  const boardElement = document.getElementById("board");
-  const resetButton = document.getElementById("reset-button");
+const Gameboard = (() => {
+  const board = Array(9).fill('');
 
-  let currentPlayer = "X";
-  let gameOver = false;
+  const isCellEmpty = (index) => board[index] === '';
 
-  const isBoardFilled = () => cells.every((cell) => cell.textContent !== "");
+  const isBoardFilled = () => board.every((cell) => cell !== "");
+
+  const markCell = (index, marker) => {
+      if (isCellEmpty(index)) board[index] = marker;
+  };
+
+  const resetBoard = () => board.fill('');
+  
+  return {
+      get currentBoard() { return board },
+      isCellEmpty,
+      isBoardFilled,
+      markCell,
+      resetBoard,
+  };
+})();
+
+const Player = (name, symbol) => ({ name, symbol });
+
+const Game = (() => {
+  const player1 = Player('Player 1', 'X');
+  const player2 = Player('Player 2', 'O');
+  let currentPlayer = player1;
+  let isGameOver = false;
+  let winner = null;
+
+  const { isCellEmpty, isBoardFilled, markCell, currentBoard, resetBoard } = Gameboard;
+
+  const winPatterns = [
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8],
+    [0, 4, 8],
+    [2, 4, 6],
+  ];
 
   const checkWinner = () => {
-    const winPatterns = [
-      [1, 2, 3],
-      [4, 5, 6],
-      [7, 8, 9],
-      [1, 4, 7],
-      [2, 5, 8],
-      [3, 6, 9],
-      [1, 5, 9],
-      [3, 5, 7],
-    ];
-
-    for (const pattern of winPatterns) {
-      const [a, b, c] = pattern;
-      const sqrA = document.getElementById(a).textContent;
-      const sqrB = document.getElementById(b).textContent;
-      const sqrC = document.getElementById(c).textContent;
-      if (sqrA !== "" && sqrA === sqrB && sqrA === sqrC) {
-        return true;
-      }
+    if (
+      winPatterns.some(
+        ([a, b, c]) =>
+          currentBoard[a] !== "" &&
+          currentBoard[a] === currentBoard[b] &&
+          currentBoard[a] === currentBoard[c]
+      )
+    ) {
+      winner = currentPlayer;
+      return true;
     }
 
     return false;
   };
 
-  const updateResult = () => {
-    if (checkWinner()) {
-      result.textContent = `Result: Player ${currentPlayer} wins!`;
-    } else if (isBoardFilled()) {
-      result.textContent = "Result: It's a tie!";
+  const isValidMove = (index) => isCellEmpty(index) && !isGameOver;
+
+  const makeMove = (index) => {
+    if (isValidMove(index)) {
+      markCell(index, currentPlayer.symbol);
+      return true;
+    }
+    return false;
+  }
+
+  const switchPlayer = () => {
+    currentPlayer = currentPlayer === player1 ? player2 : player1;
+  };
+
+  const status = () => {
+    isGameOver = checkWinner() || isBoardFilled();
+    if (isGameOver) {
+      return winner ? `Result: ${winner.name} wins!` : "Result: It's a tie!";
     } else {
-      result.textContent = "Game in progress...";
+      switchPlayer();
+      return "Game in progress...";
     }
   };
 
   const resetGame = () => {
-    cells.forEach((cell) => (cell.textContent = ""));
-    result.textContent = "";
-    currentPlayer = "X";
-    currentPlayerSymbol.textContent = currentPlayer;
-    gameOver = false;
+    resetBoard();
+    currentPlayer = player1;
+    winner = null;
+    isGameOver = false;
   };
 
-  const switchPlayer = () => {
-    currentPlayer = currentPlayer === "X" ? "O" : "X";
-    currentPlayerSymbol.textContent = currentPlayer;
+  return {
+    get currentPlayer() { return currentPlayer },
+    makeMove,
+    status,
+    resetGame
+  };
+})();
+
+const displayController = (() => {
+  const playerNameElement = document.getElementById("player-name");
+  const playerSymbolElement = document.getElementById("player-symbol");
+  const result = document.getElementById("result");
+  const cells = Array.from(document.querySelectorAll('[data-type="cell"]'));
+
+  const displayCurrentPlayer = ({ name, symbol }) => {
+    playerNameElement.textContent = name;
+    playerSymbolElement.textContent = symbol;
+  };
+
+  const displayResult = (msg) => {
+    result.textContent = msg;
+  };
+
+  const displayCellContent = (index, symbol) => {
+    cells[index].textContent = symbol;
+  };
+
+  const resetDisplay = () => {
+    cells.forEach((cell) => (cell.textContent = ""));
+    result.textContent = "";
+  };
+
+  const updateDisplay = (cellIndex, Game) => {
+    displayCellContent(cellIndex, Game.currentPlayer.symbol);
+    displayResult(Game.status());
+    displayCurrentPlayer(Game.currentPlayer);
+  };
+
+  return {
+    displayCurrentPlayer,
+    updateDisplay,
+    resetDisplay
+  };
+})();
+
+const main = () => {
+  const boardElement = document.getElementById("board");
+  const resetButton = document.getElementById("reset-button");
+
+  const { displayCurrentPlayer, resetDisplay, updateDisplay } = displayController;
+  const { makeMove, resetGame } = Game;
+
+  displayCurrentPlayer(Game.currentPlayer);
+
+  const handleResetBtnClick = () => {
+    resetGame();
+    resetDisplay();
   };
 
   const handleCellClick = (e) => {
     const cell = e.target;
-    if (gameOver || cell.dataset.type !== "cell" || cell.textContent !== "")
-      return;
-    cell.textContent = currentPlayer;
-    gameOver = checkWinner() || isBoardFilled();
-    if (!gameOver) switchPlayer();
-    updateResult();
+    const id = parseInt(cell.id);
+    if (cell.dataset.type !== "cell" || !makeMove(id)) return;
+    updateDisplay(id, Game);
   };
 
   boardElement.addEventListener("click", handleCellClick);
-  resetButton.addEventListener("click", resetGame);
+  resetButton.addEventListener("click", handleResetBtnClick);
 };
 
-document.addEventListener("DOMContentLoaded", initializeGame);
+document.addEventListener("DOMContentLoaded", main);
